@@ -700,6 +700,10 @@ static int serialupdi_read_byte(PROGRAMMER * pgm, AVRPART * p, AVRMEM * mem,
   return updi_read_byte(pgm, mem->offset + addr, value);
 }
 
+static int serialupdi_paged_load(PROGRAMMER * pgm, AVRPART * p, AVRMEM * m,
+                                 unsigned int page_size,
+                                 unsigned int addr, unsigned int n_bytes);
+
 static int serialupdi_write_byte(PROGRAMMER * pgm, AVRPART * p, AVRMEM * mem,
                                  unsigned long addr, unsigned char value)
 {
@@ -718,6 +722,13 @@ static int serialupdi_write_byte(PROGRAMMER * pgm, AVRPART * p, AVRMEM * mem,
     unsigned char buffer[1];
     buffer[0]=value;
     return updi_nvm_write_flash(pgm, p, mem->offset + addr, buffer, 1);
+  }
+  if (strcmp(mem->desc, "userrow") == 0) {
+    if (serialupdi_paged_load(pgm, p, mem, mem->page_size, 0, mem->size) < 0) {
+      avrdude_message(MSG_INFO, "%s: Initial read of USERROW contents failed\n", progname);
+    }
+    mem->buf[addr]=value;
+    return serialupdi_write_userrow(pgm, p, mem, mem->page_size, 0, mem->size);
   }
   return updi_write_byte(pgm, mem->offset + addr, value);
 }
