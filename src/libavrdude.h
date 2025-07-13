@@ -892,6 +892,9 @@ struct serial_device {
   int (*drain)(const union filedescriptor *fd, int display);
 
   int (*set_dtr_rts)(const union filedescriptor *fd, int is_on);
+  int (*set_dtr)(const union filedescriptor *fd, int is_on);
+  int (*set_rts)(const union filedescriptor *fd, int is_on);
+  int (*set_brk)(const union filedescriptor *fd, int is_on);
 
   const char *usbsn;
   const char *usbproduct;
@@ -915,6 +918,8 @@ extern struct serial_device usbhid_serdev;
 #define serial_recv (serdev->recv)
 #define serial_drain (serdev->drain)
 #define serial_set_dtr_rts (serdev->set_dtr_rts)
+#define serial_set_rts (serdev->set_rts)
+#define serial_set_brk (serdev->set_brk)
 
 // See avrcache.c
 typedef struct {                // Memory cache for a subset of cached pages

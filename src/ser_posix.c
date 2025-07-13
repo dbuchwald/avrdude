@@ -372,6 +372,71 @@ static int ser_set_dtr_rts(const union filedescriptor *fdp, int is_on) {
   return 0;
 }
 
+static int ser_set_dtr(const union filedescriptor *fdp, int is_on) {
+  unsigned int ctl;
+  int r;
+
+  r = ioctl(fdp->ifd, TIOCMGET, &ctl);
+  if(r < 0) {
+    pmsg_ext_error("ioctl(\"TIOCMGET\"): %s\n", strerror(errno));
+    return -1;
+  }
+
+  if(is_on) {
+    // Set DTR 
+    ctl |= (TIOCM_DTR);
+  } else {
+    // Clear DTR and RTS
+    ctl &= ~(TIOCM_DTR);
+  }
+
+  r = ioctl(fdp->ifd, TIOCMSET, &ctl);
+  if(r < 0) {
+    pmsg_ext_error("ioctl(\"TIOCMSET\"): %s\n", strerror(errno));
+    return -1;
+  }
+
+  return 0;
+}
+
+static int ser_set_rts(const union filedescriptor *fdp, int is_on) {
+  unsigned int ctl;
+  int r;
+
+  r = ioctl(fdp->ifd, TIOCMGET, &ctl);
+  if(r < 0) {
+    pmsg_ext_error("ioctl(\"TIOCMGET\"): %s\n", strerror(errno));
+    return -1;
+  }
+
+  if(is_on) {
+    // Set RTS
+    ctl |= (TIOCM_RTS);
+  } else {
+    // Clear DTR and RTS
+    ctl &= ~(TIOCM_RTS);
+  }
+
+  r = ioctl(fdp->ifd, TIOCMSET, &ctl);
+  if(r < 0) {
+    pmsg_ext_error("ioctl(\"TIOCMSET\"): %s\n", strerror(errno));
+    return -1;
+  }
+
+  return 0;
+}
+
+static int ser_set_brk(const union filedescriptor *fdp, int is_on) {
+
+  long ioctl_flag = is_on == 0 ? TIOCCBRK : TIOCSBRK;
+
+  if (ioctl(fdp->ifd, ioctl_flag) < 0) {
+    pmsg_ext_error("ioctl(\"TCIOCCBRK|TIOCSBRK\"): %s\n", strerror(errno));
+    return -1;
+  }
+  return 0;
+}
+
 static int ser_open(const char *port, union pinfo pinfo, union filedescriptor *fdp) {
   int rc;
   int fd;
@@ -544,6 +609,9 @@ struct serial_device serial_serdev = {
   .recv = ser_recv,
   .drain = ser_drain,
   .set_dtr_rts = ser_set_dtr_rts,
+  .set_dtr = ser_set_dtr,
+  .set_rts = ser_set_rts,
+  .set_brk = ser_set_brk,
   .flags = SERDEV_FL_CANSETSPEED,
 };
 

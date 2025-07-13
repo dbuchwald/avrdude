@@ -607,14 +607,25 @@ static int serialupdi_write_userrow(const PROGRAMMER *pgm, const AVRPART *p, con
   return 0;
 }
 
+static int serialupdi_unlock(const PROGRAMMER *pgm, const AVRPART *p);
+
 static int serialupdi_initialize(const PROGRAMMER *pgm, const AVRPART *p) {
   uint8_t value;
   uint8_t reset_link_required = 0;
 
   if(updi_link_init(pgm) < 0) {
-    pmsg_error("UPDI link initialization failed\n");
-    return -1;
+    pmsg_error("UPDI link initialization failed\nAttempting chip unlock procedure\n");
+    if (serialupdi_unlock(pgm, p) <0 ) {
+      pmsg_error("Special UPDI handshake failed\n");
+      return -1;
+    } else {
+      if(updi_link_init(pgm) < 0) {
+        pmsg_error("Second attempt at UPDI link initialization failed too...\n");
+        return -1;
+      }
+    }
   }
+
   pmsg_notice2("UPDI link initialization OK\n");
 
   if(updi_get_rts_mode(pgm) != RTS_MODE_DEFAULT) {
@@ -919,6 +930,14 @@ static int serialupdi_unlock(const PROGRAMMER *pgm, const AVRPART *p) {
 */
   unsigned char buffer[8];
   uint8_t key_status;
+
+
+  if (updi_link_special_handshake(pgm)<0) {
+    pmsg_error("Special handshake failed\n");
+    return -1;
+  }
+
+  pmsg_info("Unlocking device...\n");
 
   memcpy(buffer, UPDI_KEY_CHIPERASE, sizeof(buffer));
 

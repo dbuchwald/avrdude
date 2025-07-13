@@ -33,6 +33,7 @@ extern "C" {
 
   int updi_link_open(PROGRAMMER *pgm);
   void updi_link_close(PROGRAMMER *pgm);
+  int updi_link_special_handshake(const PROGRAMMER *pgm);
   int updi_link_init(const PROGRAMMER *pgm);
   int updi_link_ldcs(const PROGRAMMER *pgm, uint8_t address, uint8_t *value);
   int updi_link_stcs(const PROGRAMMER *pgm, uint8_t address, uint8_t value);

@@ -78,6 +78,47 @@ static void updi_physical_close(PROGRAMMER *pgm) {
   pgm->fd.ifd = -1;
 }
 
+static int updi_physical_special_handshake(const PROGRAMMER *pgm) {
+
+  if (serial_set_rts(&pgm->fd, 0)<0) {
+    pmsg_error("Failed to set RTS line high\n");
+    return -1;
+  }
+  if (serial_set_brk(&pgm->fd, 1) < 0) {
+    pmsg_error("Failed to set break state on UPDI line\n");
+    return -1;
+  }
+  usleep(10);
+  if (serial_set_rts(&pgm->fd, 1)<0) {
+    pmsg_error("Failed to set RTS line low\n");
+    return -1;
+  }
+  usleep(100);
+  if (serial_set_rts(&pgm->fd, 0)<0) {
+    pmsg_error("Failed to set RTS line high\n");
+    return -1;
+  }
+  usleep(40000);
+  if (serial_set_brk(&pgm->fd, 0) < 0) {
+    pmsg_error("Failed to clear break state on UPDI line\n");
+    return -1;
+  }
+  usleep(100);
+
+  if (serial_set_brk(&pgm->fd, 1) < 0) {
+    pmsg_error("Failed to set break state on UPDI line\n");
+    return -1;
+  }
+  usleep(100);
+  if (serial_set_brk(&pgm->fd, 0) < 0) {
+    pmsg_error("Failed to clear break state on UPDI line\n");
+    return -1;
+  }
+
+  return 0;
+}
+
+
 static int updi_physical_send(const PROGRAMMER *pgm, unsigned char *buf, size_t len) {
   size_t i;
   int rv;
@@ -193,6 +234,11 @@ int updi_link_open(PROGRAMMER *pgm) {
 void updi_link_close(PROGRAMMER *pgm) {
   updi_physical_close(pgm);
 }
+
+int updi_link_special_handshake(const PROGRAMMER *pgm) {
+  return updi_physical_special_handshake(pgm);
+}
+
 
 static int updi_link_init_session_parameters(const PROGRAMMER *pgm) {
 /*
